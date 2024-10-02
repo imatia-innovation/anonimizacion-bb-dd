@@ -92,12 +92,12 @@ def guardar_en_csv(matriz_permutada_indices, archivo_salida):
 # Función main que coordina la lectura, permutación y guardado
 def main():
     # Leer la matriz desde un archivo CSV
-    archivo_csv = 'C:/Users/olivia.castineiras/Desktop/cor_credit_cards.csv'
+    archivo_csv = 'C:/Users/olivia.castineiras/Desktop/cor_users.csv'
     matriz_original = pd.read_csv(archivo_csv, header=None).values.tolist()  # Lee el CSV y lo convierte en una lista
 
     log.basicConfig(level=log.DEBUG)
     # Definir las columnas a mezclar
-    columnas_a_mezclar = [0, 1]
+    columnas_a_mezclar = [0, 1,2,3]
 
     try:
         matriz_permutada_indices = permutar_filas(matriz_original, columnas_a_mezclar)
