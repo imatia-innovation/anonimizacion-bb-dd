@@ -92,7 +92,9 @@ def guardar_en_csv(matriz_permutada_indices, archivo_salida):
 # Función main que coordina la lectura, permutación y guardado
 def main():
     # Leer la matriz desde un archivo CSV
-    archivo_csv = 'C:/Users/olivia.castineiras/Desktop/cor_credit_cards.csv'
+    ruta_de_trabajo = 'C:/Users/olivia.castineiras/Desktop/'
+    nombre_fichero = 'cor_credit_cards.csv'
+    archivo_csv = ruta_de_trabajo + nombre_fichero
     matriz_original = pd.read_csv(archivo_csv, header=None).values.tolist()  # Lee el CSV y lo convierte en una lista
 
     log.basicConfig(level=log.DEBUG)
@@ -103,7 +105,7 @@ def main():
         matriz_permutada_indices = permutar_filas(matriz_original, columnas_a_mezclar)
 
         # Guardar la matriz de índices permutados en un nuevo archivo CSV
-        archivo_salida = 'matriz_permutada_indices.csv'  # Cambia esto a la ruta donde quieras guardar el CSV
+        archivo_salida = 'permutado_' + nombre_fichero  # Cambia esto a la ruta donde quieras guardar el CSV
         guardar_en_csv(matriz_permutada_indices, archivo_salida)
 
     except ValueError as e:
