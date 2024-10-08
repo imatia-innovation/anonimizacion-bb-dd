@@ -28,6 +28,7 @@ def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
             indice_aleatorio = random.choice(indices_disponibles)
             intentos += 1
             
+
             # Verifica que no se haya usado previamente en la fila
             if all(permutacion[fila-1][prev_col] != indice_aleatorio for prev_col in range(col)):
                 permutacion[fila-1][col] = indice_aleatorio
@@ -96,7 +97,6 @@ def main():
     ruta_de_trabajo = 'C:/Users/olivia.castineiras/Desktop/'
     nombre_fichero = 'cor_credit_cards.csv'
     archivo_csv = ruta_de_trabajo + nombre_fichero
-
     matriz_original = pd.read_csv(archivo_csv, header=None).values.tolist()  # Lee el CSV y lo convierte en una lista
 
     log.basicConfig(level=log.DEBUG)
@@ -107,7 +107,7 @@ def main():
         matriz_permutada_indices = permutar_filas(matriz_original, columnas_a_mezclar)
 
         # Guardar la matriz de índices permutados en un nuevo archivo CSV
-        archivo_salida = 'permutado_' + nombre_fichero  # Cambia esto a la ruta donde quieras guardar el CSV
+        archivo_salida = 'permutado_' + nombre_fichero  
         guardar_en_csv(matriz_permutada_indices, archivo_salida)
 
     except ValueError as e:
