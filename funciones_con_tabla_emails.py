@@ -4,16 +4,14 @@ import logging as log
 
 # Función para crear la matriz de permutación inicial
 def crear_matriz_permutacion(num_filas, num_columnas):
-    print(f"Creando matriz de permutación inicial con {num_filas-1} filas y {num_columnas} columnas")
-    return [[None] * num_columnas for _ in range(num_filas - 1)]  # Excluye la primera fila (encabezados)
+    print(f"Creando matriz de permutación inicial con {num_filas} filas y {num_columnas} columnas")
+    return [[None] * num_columnas for _ in range(num_filas)]  # Excluye la primera fila (encabezados)
 
 # Función para mezclar los índices de una columna específica
 def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
-    indices_disponibles = list(range(1, num_filas))  # Omite la primera fila (encabezados)
-    
-    # print(f"Mezclando columna {col}. Indices disponibles: {indices_disponibles}")
-    
-    for fila in range(1, num_filas):
+    indices_disponibles = list(range(0,num_filas))  # Omite la primera fila (encabezados)
+    print(indices_disponibles)
+    for fila in range(0,num_filas):
         intentos = 0
         asignado = False
         
@@ -21,20 +19,16 @@ def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
             indice_aleatorio = random.choice(indices_disponibles)
             intentos += 1
             
-            # print(f"Intento {intentos}: Asignando índice {indice_aleatorio} a la fila {fila}")
-            
             # Verifica que no se haya usado previamente en la fila
             if all(permutacion[fila-1][prev_col] != indice_aleatorio for prev_col in range(col)):
                 permutacion[fila-1][col] = indice_aleatorio
                 indices_disponibles.remove(indice_aleatorio)
-                # print(f"Índice {indice_aleatorio} asignado a la fila {fila} en la columna {col}")
                 asignado = True
                 break
         
         if not asignado:
             # Si no se pudo asignar, lo asigna aunque coincida
             indice_aleatorio = random.choice(indices_disponibles)
-            # print(f"No se pudo asignar índice único, asignando {indice_aleatorio} forzosamente")
             permutacion[fila-1][col] = indice_aleatorio
             indices_disponibles.remove(indice_aleatorio)
     
@@ -46,27 +40,22 @@ def separar_emails(df):
         print("Separando la columna 'email' en partes")
         
         # Dividir la columna "email" en nombre y dominio
-        df[['name', 'domain']] = df['email'].str.split('@', n=1, expand=True)
+        df[['anterior', 'domain']] = df['email'].str.split('@', n=1, expand=True)
         df['domain'] = '@' + df['domain'].astype(str)  # Añadir '@' al dominio
         
         # Separar 'name' por "." o "_"
-        name_parts = df['name'].str.split(r'[._]', expand=True)
-        # print(f"Partes del nombre separadas: {name_parts.columns.tolist()}")
+        name_parts = df['anterior'].str.split(r'[._]', expand=True)
 
         # Renombrar las columnas de name_parts como name_1, name_2, ...
-        name_parts.columns = [f'name_{i+1}' for i in range(name_parts.shape[1])]
-        # print(name_parts.columns)
+        name_parts.columns = [f'anterior_{i+1}' for i in range(name_parts.shape[1])]
 
         # Pone las partes en las que dividimos 'name' al final del df 
-        # y elimina las columnas 'email' y 'name'
-        df = pd.concat([df.drop(columns=['email', 'name']), name_parts], axis=1)  # Eliminar 'name' y 'email'
+        df = pd.concat([df.drop(columns=['email', 'anterior']), name_parts], axis=1)  # Eliminar 'name' y 'email'
 
         # Reorganizar las columnas para que 'domain' sea la última columna
         cols = df.columns.tolist()  # Obtener la lista de columnas
         cols.append(cols.pop(cols.index('domain')))  # Mover 'domain' al final
         df = df[cols]  # Reorganizar el DataFrame
-
-        # print(df)
         
         # Devolver el DataFrame y el número de partes del nombre
         num_partes_nombre = name_parts.shape[1]
@@ -77,7 +66,7 @@ def separar_emails(df):
 
 def unir_emails(df, num_partes_nombre):
     # Generar nombres de columnas para partes del nombre
-    nombre_columnas = [f'name_{i+1}' for i in range(num_partes_nombre)]
+    nombre_columnas = [f'anterior_{i+1}' for i in range(num_partes_nombre)]
     
     # Comprobar si la columna 'domain' y todas las partes del nombre existen
     if 'domain' in df.columns and all(col in df.columns for col in nombre_columnas):
@@ -104,6 +93,109 @@ def unir_emails(df, num_partes_nombre):
 
     return df
 
+# Nueva función para separar el nombre en partes y mezclar
+def separar_nombre(df):
+    if 'name' in df.columns:
+        print("Separando la columna 'name' en partes")
+        
+        # Dividir la columna "name" en tantas partes como sea necesario
+        name_parts = df['name'].str.split(' ', expand=True)  # Separar por espacio
+
+        # Renombrar las columnas de name_parts como name_1, name_2, ...
+        name_parts.columns = [f'nombre_{i+1}' for i in range(name_parts.shape[1])]
+
+        # Pone las partes en las que dividimos 'name' al final del df 
+        df = pd.concat([df.drop(columns=['name']), name_parts], axis=1)  # Eliminar 'name'
+
+        # Reorganizar las columnas para que la última sea la más baja
+        cols = df.columns.tolist()  # Obtener la lista de columnas
+        df = df[cols]  # Reorganizar el DataFrame
+        
+        # Devolver el DataFrame y el número de partes del nombre
+        num_partes_nombre = name_parts.shape[1]
+        print(f"Número de partes del nombre: {num_partes_nombre}")
+        return df, num_partes_nombre
+
+    return df, 0  # Si no existe 'name', devuelve el dataframe sin cambios y 0 partes
+
+def unir_nombres(df):
+    # Generar nombres de columnas para partes del nombre
+    nombre_columnas = [col for col in df.columns if col.startswith('nombre_')]
+    
+    # Comprobar si existen partes del nombre
+    if nombre_columnas:
+        print("Uniendo las partes de 'nombre' en una sola columna")
+        
+        # Crear una función para unir partes del nombre
+        def construir_nombre(row):
+            # Unir las partes con un espacio
+            return ' '.join([str(part) for part in row[nombre_columnas] if pd.notna(part)])
+
+        # Aplicar la función para construir el nombre
+        df['name'] = df.apply(construir_nombre, axis=1)
+
+        # Eliminar las partes del nombre
+        df.drop(columns=nombre_columnas, inplace=True)
+        
+        print("Columna 'name' reconstruida:")
+        print(df['name'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
+    else:
+        print("Advertencia: No se pudo unir 'name' porque faltan columnas necesarias.")
+
+    return df
+
+
+# Nueva función para separar el nombre en partes y mezclar
+def separar_surname(df):
+    if 'surname' in df.columns:
+        print("Separando la columna 'surname' en partes")
+        
+        # Dividir la columna "name" en tantas partes como sea necesario
+        surname_parts = df['surname'].str.split(' ', expand=True)  # Separar por espacio
+
+        # Renombrar las columnas de name_parts como name_1, name_2, ...
+        surname_parts.columns = [f'surname_{i+1}' for i in range(surname_parts.shape[1])]
+
+        # Pone las partes en las que dividimos 'name' al final del df 
+        df = pd.concat([df.drop(columns=['surname']), surname_parts], axis=1)  # Eliminar 'name'
+
+        # Reorganizar las columnas para que la última sea la más baja
+        cols = df.columns.tolist()  # Obtener la lista de columnas
+        df = df[cols]  # Reorganizar el DataFrame
+        
+        # Devolver el DataFrame y el número de partes del nombre
+        num_partes_surname = surname_parts.shape[1]
+        print(f"Número de partes del nombre: {num_partes_surname}")
+        return df, num_partes_surname
+
+    return df, 0  # Si no existe 'name', devuelve el dataframe sin cambios y 0 partes
+
+def unir_surname(df):
+    # Generar nombres de columnas para partes del nombre
+    nombre_columnas = [col for col in df.columns if col.startswith('surname_')]
+    
+    # Comprobar si existen partes del nombre
+    if nombre_columnas:
+        print("Uniendo las partes de 'surname' en una sola columna")
+        
+        # Crear una función para unir partes del nombre
+        def construir_nombre(row):
+            # Unir las partes con un espacio
+            return ' '.join([str(part) for part in row[nombre_columnas] if pd.notna(part)])
+
+        # Aplicar la función para construir el nombre
+        df['surname'] = df.apply(construir_nombre, axis=1)
+
+        # Eliminar las partes del nombre
+        df.drop(columns=nombre_columnas, inplace=True)
+        
+        print("Columna 'surname' reconstruida:")
+        print(df['surname'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
+    else:
+        print("Advertencia: No se pudo unir 'surname' porque faltan columnas necesarias.")
+
+    return df
+
 
 
 # Función para agregar la fila de encabezados y organizar la matriz final
@@ -113,8 +205,9 @@ def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
     num_filas = len(matriz)
     num_columnas = len(matriz[0])
     
-    matriz_permutada_indices = [matriz[0]]  # Agregar encabezados originales
-    for fila in range(num_filas - 1):
+    matriz_permutada_indices = []  #vamos añadiendo aqui los valores permutados(sin encabezado-> lo añadimos al final)
+    
+    for fila in range(num_filas-1):
         nueva_fila = [None] * num_columnas
         for col in range(num_columnas):
             if col in columnas_a_mezclar:
@@ -124,9 +217,9 @@ def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
             else:
                 nueva_fila[col] = matriz[fila + 1][col]
         matriz_permutada_indices.append(nueva_fila)
-    
     print("Matriz organizada")
     return matriz_permutada_indices
+
 
 # Función principal que llama al resto de funciones
 def permutar_filas(matriz, columnas_a_mezclar, max_intentos=5):
@@ -158,7 +251,7 @@ def main():
     
     # Leer la matriz desde un archivo CSV
     ruta_de_trabajo = 'C:/Users/olivia.castineiras/Desktop/'
-    nombre_fichero = 'cor_emails_20240925105746.csv'  
+    nombre_fichero = 'cor_employees_202409191138.csv'  
     archivo_csv = ruta_de_trabajo + nombre_fichero
     df_original = pd.read_csv(archivo_csv)
     print(f"Archivo leído: {archivo_csv}")
@@ -169,7 +262,7 @@ def main():
     log.basicConfig(level=log.DEBUG)
 
     # Separar la columna 'email' si existe
-    columnas_a_mezclar = ['id_email', 'email','name','id_contact']  # Especificar manualmente las columnas a mezclar
+    columnas_a_mezclar = ['id_user', 'email','name','surname','id_contact']  # Especificar manualmente las columnas a mezclar
 
     # Si 'email' está en las columnas a mezclar, separamos primero
     if 'email' in columnas_a_mezclar:
@@ -178,19 +271,31 @@ def main():
         
         # Eliminar 'email' de las columnas a mezclar y añadir las nuevas columnas de nombre y dominio
         columnas_a_mezclar.remove('email')
-        columnas_a_mezclar += [f'name_{i+1}' for i in range (num_partes_nombre)]+['domain']
-        print("columnas dsps de borrar email y meterle las otras", columnas_a_mezclar)
+        columnas_a_mezclar += [f'anterior_{i+1}' for i in range(num_partes_nombre)]+['domain']
+        print("Columnas después de borrar 'email' y añadir las otras:", columnas_a_mezclar)
 
+    # Separar la columna 'name' si existe
+    df_original, num_partes_nombre_name = separar_nombre(df_original)
+    if num_partes_nombre_name > 0:
+        columnas_a_mezclar += [f'nombre_{i+1}' for i in range(num_partes_nombre_name)]  # Añadir las columnas a mezclar
+        columnas_a_mezclar.remove('name')
+        print(f"Columnas a mezclar después de separar 'name': {columnas_a_mezclar}")
+
+
+    df_original, num_partes_surname = separar_nombre(df_original)
+    if num_partes_surname > 0:
+        columnas_a_mezclar += [f'surname_{i+1}' for i in range(num_partes_surname)]  # Añadir las columnas a mezclar
+        columnas_a_mezclar.remove('surname')
+        print(f"Columnas a mezclar después de separar 'surname': {columnas_a_mezclar}")
+        
     # Convertir DataFrame en matriz (lista de listas) para mezclar
     matriz_original = df_original.values.tolist()
-    # print("matriz_roiginal", matriz_original)
     print("DataFrame convertido a matriz (lista de listas)")
+    # print(matriz_original)
 
     # Obtener índices de las columnas a mezclar en la matriz
     indices_a_mezclar = []
     for col in columnas_a_mezclar:
-        # print("col", col)
-        # print(df_original.columns)
         if col in df_original.columns:
             index = df_original.columns.get_loc(col)
             indices_a_mezclar.append(index)
@@ -207,13 +312,14 @@ def main():
         df_permutado = pd.DataFrame(matriz_permutada_indices, columns=df_original.columns)
         print("Matriz permutada convertida a DataFrame")
         
-        # print("df_permutadooooo\n", df_permutado)
-
         # Volver a unir las partes del email si existían
         if 'domain' in df_permutado.columns:
             df_permutado = unir_emails(df_permutado, num_partes_nombre)
             print("Emails unidos nuevamente")
-
+        
+        # Volver a unir las partes del nombre si existían
+        df_permutado = unir_nombres(df_permutado)
+        
         # Guardar la matriz permutada en un nuevo archivo CSV
         archivo_salida = 'C:/Users/olivia.castineiras/Desktop/permutado_' + nombre_fichero  
         df_permutado.to_csv(archivo_salida, index=False)
@@ -224,5 +330,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
