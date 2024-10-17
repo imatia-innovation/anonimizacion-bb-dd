@@ -1,17 +1,29 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 16 11:48:24 2024
+
+@author: olivia.castineiras
+"""
+
+
+import mysql.connector
 import random
 import pandas as pd
-import logging as log
+# import logging as log
 
 # Función para crear la matriz de permutación inicial
 def crear_matriz_permutacion(num_filas, num_columnas):
     print(f"Creando matriz de permutación inicial con {num_filas} filas y {num_columnas} columnas")
-    return [[None] * num_columnas for _ in range(num_filas)]  # Excluye la primera fila (encabezados)
+    permutacion= [[None] * num_columnas for _ in range(num_filas)] 
+    return permutacion
 
 # Función para mezclar los índices de una columna específica
 def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
     indices_disponibles = list(range(0,num_filas))  # Omite la primera fila (encabezados)
-    print(indices_disponibles)
+    print("longitud de las filas sin encabezado",len(indices_disponibles))
+    #print(indices_disponibles)
     for fila in range(0,num_filas):
+
         intentos = 0
         asignado = False
         
@@ -31,7 +43,7 @@ def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
             indice_aleatorio = random.choice(indices_disponibles)
             permutacion[fila-1][col] = indice_aleatorio
             indices_disponibles.remove(indice_aleatorio)
-    
+    print("INDICES MEZCLADOS SIN ENCABEZADO")
     return permutacion
 
 
@@ -216,7 +228,7 @@ def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
     
     matriz_permutada_indices = []  #vamos añadiendo aqui los valores permutados(sin encabezado-> lo añadimos al final)
     
-    for fila in range(num_filas-1):
+    for fila in range(num_filas): 
         nueva_fila = [None] * num_columnas
         for col in range(num_columnas):
             if col in columnas_a_mezclar:
@@ -224,9 +236,10 @@ def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
                 indice_permutado = permutacion[fila][col]
                 nueva_fila[col] = matriz[indice_permutado][col]
             else:
-                nueva_fila[col] = matriz[fila + 1][col]
+                nueva_fila[col] = matriz[fila][col]
         matriz_permutada_indices.append(nueva_fila)
-    print("Matriz organizada")
+    print("Matriz permutada sin cabecera")
+    # print("MATRIZ PERMUTADA INDICSE", matriz_permutada_indices)
     return matriz_permutada_indices
 
 
@@ -246,98 +259,161 @@ def permutar_filas(matriz, columnas_a_mezclar, max_intentos=5):
     
     # Organiza la matriz final con encabezados y las columnas mezcladas
     matriz_permutada_indices = agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar)
-    
+    print("MATRIZ LISTA")
     return matriz_permutada_indices
 
-# Función para guardar la matriz en un archivo CSV
-def guardar_en_csv(matriz_permutada_indices, archivo_salida):
-    pd.DataFrame(matriz_permutada_indices).to_csv(archivo_salida, index=False, header=False)
-    print(f"\nLa matriz de valores permutados se ha guardado en {archivo_salida}.")
+# Conexión a la base de datos
+def conectar_bd():
+    cnx = mysql.connector.connect(
+        user='olivia',
+        password='olivia',
+        host='localhost',  
+        database='tests_anonimizacion' 
+    ) 
+    return cnx
 
-# Función main que coordina la lectura, permutación y guardado
-def main():
-    print("Iniciando proceso de permutación")
-    
-    # Leer la matriz desde un archivo CSV
-    ruta_de_trabajo = 'C:/Users/olivia.castineiras/Desktop/'
-    nombre_fichero = 'cor_users_prueba.csv'  
-    archivo_csv = ruta_de_trabajo + nombre_fichero
-    df_original = pd.read_csv(archivo_csv)
-    print(f"Archivo leído: {archivo_csv}")
-    
-    # Imprimir las columnas disponibles en el DataFrame
-    print("Columnas en el DataFrame original:", df_original.columns.tolist())
+# Obtener las tablas de la base de datos
+def obtener_tablas(cnx):
+    cursor = cnx.cursor()
+    cursor.execute("SHOW TABLES")
+    tablas = cursor.fetchall()
+    return [tabla[0] for tabla in tablas]
 
-    log.basicConfig(level=log.DEBUG)
 
-    # Separar la columna 'email' si existe
-    columnas_a_mezclar = ['id_user', 'email','name','surname','id_contact']  # Especificar manualmente las columnas a mezclar
+def leer_tabla(cnx, tabla_seleccionada):
+    query = f"SELECT * FROM {tabla_seleccionada}"
+    df = pd.read_sql(query, cnx)
+    print(f"Datos leídos desde la tabla {tabla_seleccionada}")
+    return df
 
-    # Si 'email' está en las columnas a mezclar, separamos primero
-    if 'email' in columnas_a_mezclar:
-        df_original, num_partes_nombre = separar_emails(df_original)  # Ahora también obtenemos el número de partes
-        print(f"Columnas a mezclar después de separar 'email': {columnas_a_mezclar}")
+
+
+# Función principal para interactuar con el usuario
+def interfaz_usuario():
+    cnx = conectar_bd()
+
+    while True:
+        print("\n=== Menú Principal ===")
+        print("1. Mezclar una tabla")
+        print("2. Salir")
+
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            tablas = obtener_tablas(cnx)  # Obtener las tablas de la BD
+            print("\nTablas disponibles:")
+            for idx, tabla in enumerate(tablas):
+                print(f"{idx + 1}. {tabla}")
+
+            seleccion_tabla = int(input("Seleccione la tabla que desea mezclar (número): ")) - 1
+            tabla_seleccionada = tablas[seleccion_tabla]
+            df = leer_tabla(cnx, tabla_seleccionada)  # Leer la tabla seleccionada
+
+            print("\nColumnas disponibles en la tabla:")
+            columnas = df.columns.tolist()
+            for idx, col in enumerate(columnas):
+                print(f"{idx + 1}. {col}")
+
+            columnas_a_mezclar = input("\nIngrese los números de las columnas que desea mezclar (separados por comas): ")
+            columnas_a_mezclar = [columnas[int(idx) - 1] for idx in columnas_a_mezclar.split(",")]
+
+            columnas_tipo = {}  # Diccionario para almacenar los tipos de columnas
+            for columna in columnas_a_mezclar:
+                tipo = input(f"\n¿Qué tipo de datos es la columna '{columna}'? (name, surname, email, otro): ")
+                columnas_tipo[columna] = tipo
+
+            df_mezclado = aplicar_mezcla(df, columnas_tipo)
+
+            clave_primaria = input("Por favor, introduce el nombre de la columna que es la clave primaria, si no tiene o no la sabes introduce NO: ")
+            # Guardar en la BD la tabla mezclada
+            guardar_en_bd(df_mezclado, cnx, tabla_seleccionada, columnas_a_mezclar, clave_primaria)
         
-        # Eliminar 'email' de las columnas a mezclar y añadir las nuevas columnas de nombre y dominio
-        columnas_a_mezclar.remove('email')
-        columnas_a_mezclar += [f'anterior_{i+1}' for i in range(num_partes_nombre)]+['domain']
-        print("Columnas después de borrar 'email' y añadir las otras:", columnas_a_mezclar)
 
-    # Separar la columna 'name' si existe
-    df_original, num_partes_nombre_name = separar_nombre(df_original)
-    if num_partes_nombre_name > 0:
-        columnas_a_mezclar += [f'nombre_{i+1}' for i in range(num_partes_nombre_name)]  # Añadir las columnas a mezclar
-        columnas_a_mezclar.remove('name')
-        print(f"Columnas a mezclar después de separar 'name': {columnas_a_mezclar}")
+        elif opcion == "2":
+            print("Saliendo del programa.")
+            cnx.close()
+            break
 
-
-    df_original, num_partes_surname = separar_surname(df_original)
-    if num_partes_surname > 0:
-        columnas_a_mezclar += [f'surname_{i+1}' for i in range(num_partes_surname)]  # Añadir las columnas a mezclar
-        columnas_a_mezclar.remove('surname')
-        print(f"Columnas a mezclar después de separar 'surname': {columnas_a_mezclar}")
-        
-    # Convertir DataFrame en matriz (lista de listas) para mezclar
-    matriz_original = df_original.values.tolist()
-    print("DataFrame convertido a matriz (lista de listas)")
-    # print(matriz_original)
-
-    # Obtener índices de las columnas a mezclar en la matriz
-    indices_a_mezclar = []
-    for col in columnas_a_mezclar:
-        if col in df_original.columns:
-            index = df_original.columns.get_loc(col)
-            indices_a_mezclar.append(index)
         else:
-            print(f"Advertencia: La columna '{col}' no se encuentra en el DataFrame.")
-    
-    print(f"Índices de las columnas a mezclar: {indices_a_mezclar}")
+            print("Opción no válida. Intente de nuevo.")
 
-    try:
-        # Permutar las filas de las columnas especificadas
-        matriz_permutada_indices = permutar_filas(matriz_original, indices_a_mezclar)
 
-        # Convertir la matriz permutada de nuevo a DataFrame
-        df_permutado = pd.DataFrame(matriz_permutada_indices, columns=df_original.columns)
-        print("Matriz permutada convertida a DataFrame")
-        
-        # Volver a unir las partes del email si existían
-        if 'domain' in df_permutado.columns:
-            df_permutado = unir_emails(df_permutado, num_partes_nombre)
-            print("Emails unidos nuevamente")
-        
-        # Volver a unir las partes del nombre si existían
+def aplicar_mezcla(df, columnas_tipo):
+    # Inicializa las listas para las columnas a mezclar
+    columnas_a_mezclar = []
+
+    # Separar las columnas por su tipo
+    for columna, tipo in columnas_tipo.items():
+        if tipo == 'email':
+            df, num_partes_email = separar_emails(df)
+            columnas_a_mezclar += [f'anterior_{i+1}' for i in range(num_partes_email)] + ['domain']
+        elif tipo == 'name':
+            df, num_partes_nombre = separar_nombre(df)
+            columnas_a_mezclar += [f'nombre_{i+1}' for i in range(num_partes_nombre)]
+        elif tipo == 'surname':
+            df, num_partes_surname = separar_surname(df)
+            columnas_a_mezclar += [f'surname_{i+1}' for i in range(num_partes_surname)]
+        else:
+            columnas_a_mezclar.append(columna)
+
+    # Convertir DataFrame en matriz (lista de listas) para mezclar
+    matriz_original = df.values.tolist()
+
+    # Obtener índices de las columnas a mezclar
+    indices_a_mezclar = [df.columns.get_loc(col) for col in columnas_a_mezclar]
+
+    # Permutar las filas de las columnas especificadas
+    matriz_permutada_indices = permutar_filas(matriz_original, indices_a_mezclar)
+
+    # Convertir la matriz permutada de nuevo a DataFrame
+    df_permutado = pd.DataFrame(matriz_permutada_indices, columns=df.columns)
+    # Volver a unir las partes de los nombres, apellidos y emails si existen
+    if 'domain' in df_permutado.columns:
+        df_permutado = unir_emails(df_permutado, num_partes_email)
+    if 'nombre_1' in df_permutado.columns:
         df_permutado = unir_nombres(df_permutado)
-        
+    if 'surname_1' in df_permutado.columns:
         df_permutado = unir_surname(df_permutado)
-        
-        # Guardar la matriz permutada en un nuevo archivo CSV
-        archivo_salida = 'C:/Users/olivia.castineiras/Desktop/permutado_' + nombre_fichero  
-        df_permutado.to_csv(archivo_salida, index=False)
-        print(f"Archivo guardado en: {archivo_salida}")
 
-    except ValueError as e:
-        print(e)
+    # print("DFFFFFFFFF permutadooooo\n", df_permutado)
+    return df_permutado
+
+def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria):
+    print(f"Actualizando datos en la tabla {tabla}")
+    cursor = cnx.cursor()
+  
+    for index, row in df.iterrows(): 
+        # Construir dinámicamente la parte del SET para las columnas seleccionadas
+        set_clauses = ", ".join([f"{col} = %s" for col in columnas_a_mezclar])
+        
+        if clave_primaria.lower() != "no" and clave_primaria in df.columns:
+            clave_valor = row[clave_primaria]
+            
+            update_query = f"""    
+            UPDATE {tabla}
+            SET {set_clauses}
+            WHERE {clave_primaria} = %s
+            """
+            # Extraer los valores de las columnas que se están mezclando
+            valores = [row[col] for col in columnas_a_mezclar]
+            try:
+                cursor.execute(update_query,valores + [clave_valor])
+            except mysql.connector.Error as e:
+                print(e.msg)
+        else:
+            # Si el usuario ingresó 'NO' o la columna no existe, filtrar por todos los valores de la fila
+            valores = [row[col] for col in columnas_a_mezclar]
+            condiciones = ' AND '.join([f"{col} = %s" for col in df.columns if col not in columnas_a_mezclar])
+            valores_condiciones = [row[col] for col in df.columns if col not in columnas_a_mezclar]
+            consulta = f"UPDATE {tabla} SET {set_clauses} WHERE {condiciones}"
+            cursor.execute(consulta, valores+valores_condiciones) 
+   
+    try:
+        cnx.commit()
+        print("Cambios confirmados exitosamente.")
+    except mysql.connector.Error as e:
+        print("Error al confirmar cambios:", e)
+
 
 if __name__ == "__main__":
-    main()
+    interfaz_usuario()
