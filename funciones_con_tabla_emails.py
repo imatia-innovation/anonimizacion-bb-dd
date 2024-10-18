@@ -395,18 +395,36 @@ def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria):
             WHERE {clave_primaria} = %s
             """
             # Extraer los valores de las columnas que se están mezclando
-            valores = [row[col] for col in columnas_a_mezclar]
+            valores = [None if pd.isna(row[col]) else row[col] for col in columnas_a_mezclar]
             try:
                 cursor.execute(update_query,valores + [clave_valor])
             except mysql.connector.Error as e:
                 print(e.msg)
         else:
-            # Si el usuario ingresó 'NO' o la columna no existe, filtrar por todos los valores de la fila
-            valores = [row[col] for col in columnas_a_mezclar]
-            condiciones = ' AND '.join([f"{col} = %s" for col in df.columns if col not in columnas_a_mezclar])
-            valores_condiciones = [row[col] for col in df.columns if col not in columnas_a_mezclar]
-            consulta = f"UPDATE {tabla} SET {set_clauses} WHERE {condiciones}"
-            cursor.execute(consulta, valores+valores_condiciones) 
+            valores = [None if pd.isna(row[col]) else row[col] for col in columnas_a_mezclar]
+
+            # Generar las condiciones WHERE
+            condiciones = []
+            valores_condiciones = []
+
+            for col in df.columns:
+                if col not in columnas_a_mezclar:
+                    if pd.isna(row[col]):
+                        condiciones.append(f"{col} IS NULL")
+                    else:
+                        condiciones.append(f"{col} = %s")
+                        valores_condiciones.append(row[col])
+
+            # Combinar las condiciones en una sola cadena
+            condiciones_str = ' AND '.join(condiciones)
+
+            consulta = f"UPDATE {tabla} SET {set_clauses} WHERE {condiciones_str}"
+            try:
+                cursor.execute(consulta, valores + valores_condiciones)
+                # print(f"Fila {index}: {cursor.rowcount} filas actualizadas sin clave primaria.")
+            except mysql.connector.Error as e:
+                print(f"Error en fila {index}: {e.msg}")
+            
    
     try:
         cnx.commit()
