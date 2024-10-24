@@ -13,14 +13,13 @@ import logging as log
 
 # Función para crear la matriz de permutación inicial
 def crear_matriz_permutacion(num_filas, num_columnas):
-    print(f"Creando matriz de permutación inicial con {num_filas} filas y {num_columnas} columnas")
+    log.debug(f"Creando matriz de permutación inicial con {num_filas} filas y {num_columnas} columnas")
     permutacion= [[None] * num_columnas for _ in range(num_filas)] 
     return permutacion
 
 # Función para mezclar los índices de una columna específica
 def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
     indices_disponibles = list(range(0,num_filas))  # Omite la primera fila (encabezados)
-    print("longitud de las filas sin encabezado",len(indices_disponibles))
     #print(indices_disponibles)
     for fila in range(0,num_filas):
 
@@ -43,13 +42,12 @@ def mezclar_indices_columna(permutacion, num_filas, col, max_intentos=5):
             indice_aleatorio = random.choice(indices_disponibles)
             permutacion[fila-1][col] = indice_aleatorio
             indices_disponibles.remove(indice_aleatorio)
-    print("INDICES MEZCLADOS SIN ENCABEZADO")
     return permutacion
 
 
 def separar_emails(df):
     if 'email' in df.columns:
-        print("Separando la columna 'email' en partes")
+        log.debug("Separando la columna 'email' en partes")
         
         # Dividir la columna "email" en nombre y dominio
         df[['anterior', 'domain']] = df['email'].str.split('@', n=1, expand=True)
@@ -78,7 +76,7 @@ def separar_emails(df):
         
         # Devolver el DataFrame y el número de partes del nombre
         num_partes_nombre = name_parts.shape[1]
-        print(f"Número de partes del nombre: {num_partes_nombre}")
+        log.debug(f"Número de partes del nombre: {num_partes_nombre}")
         return df, num_partes_nombre
 
     return df, 0  # Si no existe 'email', devuelve el dataframe sin cambios y 0 partes
@@ -91,7 +89,7 @@ def unir_emails(df, num_partes_nombre):
     
     # Comprobar si la columna 'domain' y todas las partes del nombre existen
     if 'domain' in df.columns and all(col in df.columns for col in nombre_columnas):
-        print(f"Uniendo las partes de 'email'. Número de partes del nombre: {num_partes_nombre}")
+        log.debug(f"Uniendo las partes de 'email'. Número de partes del nombre: {num_partes_nombre}")
 
         # Crear una función para unir partes del nombre
         def construir_email(row):
@@ -106,18 +104,18 @@ def unir_emails(df, num_partes_nombre):
         # Eliminar las partes del nombre y el dominio
         df.drop(columns=nombre_columnas + ['domain'], inplace=True)
         
-        print("Columna 'email' reconstruida:")
-        print(df['email'].head())  # Imprimir los primeros valores de la nueva columna 'email' para verificar
+        log.debug("Columna 'email' reconstruida:")
+        log.debug(df['email'].head())  # Imprimir los primeros valores de la nueva columna 'email' para verificar
     else:
         missing_columns = [col for col in nombre_columnas if col not in df.columns] + (['domain'] if 'domain' not in df.columns else [])
-        print(f"Advertencia: No se pudo unir 'email' porque faltan columnas necesarias: {missing_columns}")
+        log.debug(f"Advertencia: No se pudo unir 'email' porque faltan columnas necesarias: {missing_columns}")
 
     return df
 
 # Nueva función para separar el nombre en partes y mezclar
 def separar_nombre(df):
     if 'name' in df.columns:
-        print("Separando la columna 'name' en partes")
+        log.debug("Separando la columna 'name' en partes")
         
         # Dividir la columna "name" en tantas partes como sea necesario
         name_parts = df['name'].str.split(r'[ .]', expand=True)  # Separar por espacio
@@ -134,7 +132,7 @@ def separar_nombre(df):
         
         # Devolver el DataFrame y el número de partes del nombre
         num_partes_nombre = name_parts.shape[1]
-        print(f"Número de partes del nombre: {num_partes_nombre}")
+        log.debug(f"Número de partes del nombre: {num_partes_nombre}")
         return df, num_partes_nombre
 
     return df, 0  # Si no existe 'name', devuelve el dataframe sin cambios y 0 partes
@@ -145,7 +143,7 @@ def unir_nombres(df):
     
     # Comprobar si existen partes del nombre
     if nombre_columnas:
-        print("Uniendo las partes de 'nombre' en una sola columna")
+        log.debug("Uniendo las partes de 'nombre' en una sola columna")
         
         # Crear una función para unir partes del nombre
         def construir_nombre(row):
@@ -158,10 +156,10 @@ def unir_nombres(df):
         # Eliminar las partes del nombre
         df.drop(columns=nombre_columnas, inplace=True)
         
-        print("Columna 'name' reconstruida:")
-        print(df['name'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
+        log.debug("Columna 'name' reconstruida:")
+        log.debug(df['name'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
     else:
-        print("Advertencia: No se pudo unir 'name' porque faltan columnas necesarias.")
+        log.debug("Advertencia: No se pudo unir 'name' porque faltan columnas necesarias.")
 
     return df
 
@@ -169,7 +167,7 @@ def unir_nombres(df):
 # Nueva función para separar el nombre en partes y mezclar
 def separar_surname(df):
     if 'surname' in df.columns:
-        print("Separando la columna 'surname' en partes")
+        log.debug("Separando la columna 'surname' en partes")
         
         # Dividir la columna "name" en tantas partes como sea necesario
         surname_parts = df['surname'].str.split(r'[ .]', expand=True)  # Separar por espacio
@@ -186,7 +184,7 @@ def separar_surname(df):
         
         # Devolver el DataFrame y el número de partes del nombre
         num_partes_surname = surname_parts.shape[1]
-        print(f"Número de partes del nombre: {num_partes_surname}")
+        log.debug(f"Número de partes del nombre: {num_partes_surname}")
         return df, num_partes_surname
 
     return df, 0  # Si no existe 'name', devuelve el dataframe sin cambios y 0 partes
@@ -197,7 +195,7 @@ def unir_surname(df):
     
     # Comprobar si existen partes del nombre
     if nombre_columnas:
-        print("Uniendo las partes de 'surname' en una sola columna")
+        log.debug("Uniendo las partes de 'surname' en una sola columna")
         
         # Crear una función para unir partes del nombre
         def construir_nombre(row):
@@ -210,10 +208,10 @@ def unir_surname(df):
         # Eliminar las partes del nombre
         df.drop(columns=nombre_columnas, inplace=True)
         
-        print("Columna 'surname' reconstruida:")
-        print(df['surname'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
+        log.debug("Columna 'surname' reconstruida:")
+        log.debug(df['surname'].head())  # Imprimir los primeros valores de la nueva columna 'name' para verificar
     else:
-        print("Advertencia: No se pudo unir 'surname' porque faltan columnas necesarias.")
+        log.debug("Advertencia: No se pudo unir 'surname' porque faltan columnas necesarias.")
 
     return df
 
@@ -221,7 +219,7 @@ def unir_surname(df):
 
 # Función para agregar la fila de encabezados y organizar la matriz final
 def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
-    print("Organizando matriz final con encabezados y columnas mezcladas")
+    log.debug("Organizando matriz final con encabezados y columnas mezcladas")
     
     num_filas = len(matriz)
     num_columnas = len(matriz[0])
@@ -238,14 +236,13 @@ def agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar):
             else:
                 nueva_fila[col] = matriz[fila][col]
         matriz_permutada_indices.append(nueva_fila)
-    print("Matriz permutada sin cabecera")
-    # print("MATRIZ PERMUTADA INDICSE", matriz_permutada_indices)
+        
     return matriz_permutada_indices
 
 
 # Función principal que llama al resto de funciones
 def permutar_filas(matriz, columnas_a_mezclar, max_intentos=5):
-    print(f"Permutando filas. Columnas a mezclar: {columnas_a_mezclar}")
+    log.debug(f"Permutando filas. Columnas a mezclar: {columnas_a_mezclar}")
     
     num_filas = len(matriz)
     num_columnas = len(matriz[0])
@@ -259,14 +256,14 @@ def permutar_filas(matriz, columnas_a_mezclar, max_intentos=5):
     
     # Organiza la matriz final con encabezados y las columnas mezcladas
     matriz_permutada_indices = agregar_encabezados_y_organizar(matriz, permutacion, columnas_a_mezclar)
-    print("MATRIZ LISTA")
+    log.debug("MATRIZ LISTA")
     return matriz_permutada_indices
 
 
 
 # Conexión a la base de datos
 def conectar_bd():
-    log.debug(f"Conectando a BBDD: ")
+    log.debug("Conectando a BBDD: ")
     cnx = mysql.connector.connect(
         user='olivia',
         password='olivia',
@@ -318,7 +315,7 @@ def interfaz_usuario():
 
         if opcion == "1":
             tablas = obtener_tablas(cnx)  # Obtener las tablas de la BD
-            print("\nTablas disponibles:")
+            log.debug("\nTablas disponibles:")
             for idx, tabla in enumerate(tablas):
                 print(f"{idx + 1}. {tabla}")
 
@@ -361,7 +358,7 @@ def solicitar_numero_o_texto(mensaje, opciones_validas=None):
         if opciones_validas and entrada.lower() in opciones_validas:
             return entrada.lower()
         elif opciones_validas:
-            print(f"Opción no válida. Opciones válidas: {', '.join(opciones_validas)}")
+            log.debug(f"Opción no válida. Opciones válidas: {', '.join(opciones_validas)}")
         else:
             return entrada
 
@@ -382,10 +379,10 @@ def leer_tabla(cnx, tabla_seleccionada, batch_size=100):
             df_total = pd.concat([df_total, df_batch], ignore_index=True)
             offset += batch_size  # Aumentar el offset para la próxima iteración
 
-        print(f"Datos leídos desde la tabla {tabla_seleccionada}")
+        log.debug(f"Datos leídos desde la tabla {tabla_seleccionada}")
         return df_total
     except Exception as e:
-        print(f"Error al leer la tabla {tabla_seleccionada}: {str(e)}")
+        log.debug(f"Error al leer la tabla {tabla_seleccionada}: {str(e)}")
         return pd.DataFrame()  # Devolver DataFrame vacío en caso de error
 
 def aplicar_mezcla_en_partes(df, columnas_tipo, batch_size=100):
@@ -410,6 +407,7 @@ def aplicar_mezcla_en_partes(df, columnas_tipo, batch_size=100):
     df_total = pd.DataFrame()
 
     total_filas = len(df)
+    log.debug(f"Total filas df {total_filas}")
     for offset in range(0, total_filas, batch_size):
         df_batch = df.iloc[offset:offset + batch_size]
         
@@ -443,59 +441,30 @@ def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria, batch_size
     cursor = cnx.cursor()
     
     total_filas = len(df)
-    
+    log.debug("actualizando paginas")
     for offset in range(0, total_filas, batch_size):
         # Obtener el lote de filas
         df_batch = df.iloc[offset:offset + batch_size]
-        print(f"Procesando filas desde {offset} hasta {min(offset + batch_size, total_filas)}")
+        log.debug(f"Procesando filas desde {offset} hasta {min(offset + batch_size, total_filas)}")
 
-        # Verificar si hay clave primaria
-        if clave_primaria.lower() != "no" and clave_primaria in df.columns:
             # Construir la consulta con clave primaria
-            for index, row in df_batch.iterrows():
-                set_clauses = ", ".join([f"{col} = %s" for col in columnas_a_mezclar])
-                update_query = f"UPDATE {tabla} SET {set_clauses} WHERE {clave_primaria} = %s"
+        for index, row in df_batch.iterrows():
+            log.debug(f"Procesando fila {index} del batch {offset}")
+            set_clauses = ", ".join([f"{col} = %s" for col in columnas_a_mezclar])
+            update_query = f"UPDATE {tabla} SET {set_clauses} WHERE {clave_primaria} = %s"
 
-                # Extraer los valores para las columnas y la clave primaria
-                valores = [None if pd.isna(row[col]) else row[col] for col in columnas_a_mezclar]
-                clave_valor = row[clave_primaria]
+            # Extraer los valores para las columnas y la clave primaria
+            valores = [None if pd.isna(row[col]) else row[col] for col in columnas_a_mezclar]
+            clave_valor = row[clave_primaria]
 
-                # Ejecutar la consulta para cada fila individualmente
-                try:
-                    cursor.execute(update_query, valores + [clave_valor])
-                    cnx.commit()
-                    print(f"Fila {index + offset} actualizada.")
-                except mysql.connector.Error as e:
-                    print(f"Error actualizando la fila {index + offset}: {e.msg}")
+            # Ejecutar la consulta para cada fila individualmente
+            try:
+                cursor.execute(update_query, valores + [clave_valor])
+                cnx.commit()
+            except mysql.connector.Error as e:
+                log.error(f"Error actualizando la fila {index + offset}: {e.msg}")
 
-        else:
-            # Construir la consulta para filas sin clave primaria
-            for index, row in df_batch.iterrows():
-                set_clauses = ", ".join([f"{col} = %s" for col in columnas_a_mezclar])
-                valores = [None if pd.isna(row[col]) else row[col] for col in columnas_a_mezclar]
 
-                # Generar condiciones WHERE
-                condiciones = []
-                valores_condiciones = []
-
-                for col in df.columns:
-                    if col not in columnas_a_mezclar:
-                        if pd.isna(row[col]):
-                            condiciones.append(f"{col} IS NULL")
-                        else:
-                            condiciones.append(f"{col} = %s")
-                            valores_condiciones.append(row[col])
-
-                condiciones_str = ' AND '.join(condiciones)
-                update_query = f"UPDATE {tabla} SET {set_clauses} WHERE {condiciones_str}"
-
-                # Ejecutar la consulta para cada fila individualmente
-                try:
-                    cursor.execute(update_query, valores + valores_condiciones)
-                    cnx.commit()
-                    # print(f"Fila {index + offset} actualizada.")
-                except mysql.connector.Error as e:
-                    print(f"Error actualizando la fila {index + offset}: {e.msg}")
 
     print("Datos actualizados en la base de datos.")
 
