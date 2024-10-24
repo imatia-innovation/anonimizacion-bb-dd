@@ -9,7 +9,7 @@ Created on Wed Oct 16 11:48:24 2024
 import mysql.connector
 import random
 import pandas as pd
-# import logging as log
+import logging as log
 
 # Función para crear la matriz de permutación inicial
 def crear_matriz_permutacion(num_filas, num_columnas):
@@ -266,6 +266,7 @@ def permutar_filas(matriz, columnas_a_mezclar, max_intentos=5):
 
 # Conexión a la base de datos
 def conectar_bd():
+    log.debug(f"Conectando a BBDD: ")
     cnx = mysql.connector.connect(
         user='olivia',
         password='olivia',
@@ -438,7 +439,7 @@ def aplicar_mezcla_en_partes(df, columnas_tipo, batch_size=100):
     return df_total
 
 def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria, batch_size=100):
-    print(f"Actualizando datos en la tabla {tabla}")
+    log.debug(f"Actualizando datos en la tabla {tabla}")
     cursor = cnx.cursor()
     
     total_filas = len(df)
@@ -503,4 +504,8 @@ def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria, batch_size
 
 
 if __name__ == "__main__":
+    log.basicConfig(
+        level=log.DEBUG,
+        format='%(asctime)s %(levelname)-8s %(message)s',
+    )
     interfaz_usuario()
