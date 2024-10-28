@@ -280,32 +280,37 @@ def obtener_tablas(cnx):
 
 # Función para capturar errores en la entrada de un número
 def solicitar_numero(mensaje, min_valor=None, max_valor=None):
-    while True:
+    valor = None  # Inicialización de la variable valor
+    while valor is None:  # Continuar hasta que se obtenga un valor válido
         try:
-            valor = int(input(mensaje))
-            if min_valor is not None and valor < min_valor:
+            valor_input = int(input(mensaje))  # Captura la entrada del usuario
+            # Comprobaciones de límites
+            if min_valor is not None and valor_input < min_valor:
                 print(f"Error: El número debe ser mayor o igual a {min_valor}.")
-            elif max_valor is not None and valor > max_valor:
+            elif max_valor is not None and valor_input > max_valor:
                 print(f"Error: El número debe ser menor o igual a {max_valor}.")
             else:
-                return valor
+                valor = valor_input  # Asigna el valor válido
         except ValueError:
             print("Error: Por favor, ingrese un número válido.")
+    return valor  # Retorna el valor válido al finalizar
+
 
 # Función para capturar errores en la entrada de texto
-def solicitar_opcion(mensaje, opciones_validas):
-    while True:
+def solicitar_opcion(mensaje, opciones_validas): 
+    opcion = input(mensaje).strip().lower()
+    while opcion not in opciones_validas:
+        print(f"Error: Opción no válida. Las opciones válidas son: {', '.join(opciones_validas)}")
         opcion = input(mensaje).strip().lower()
-        if opcion in opciones_validas:
-            return opcion
-        else:
-            print(f"Error: Opción no válida. Las opciones válidas son: {', '.join(opciones_validas)}")
+    return opcion
 
 # Función principal para interactuar con el usuario
 def interfaz_usuario():
     cnx = conectar_bd()
+    opcion = ""
 
-    while True:
+    # Menú principal
+    while opcion != "2":
         print("\n=== Menú Principal ===")
         print("1. Mezclar una tabla")
         print("2. Salir")
@@ -327,67 +332,68 @@ def interfaz_usuario():
             for idx, col in enumerate(columnas):
                 print(f"{idx + 1}. {col}")
 
-            while True:
+            # Solicitar columnas a mezclar
+            columnas_a_mezclar = None
+            columnas_validas = False
+            while not columnas_validas:
                 columnas_a_mezclar = input("\nIngrese los números de las columnas que desea mezclar (separados por comas): ")
                 try:
                     columnas_a_mezclar = [columnas[int(idx) - 1] for idx in columnas_a_mezclar.split(",")]
-                    break  # Si el input es correcto, salimos del bucle
+                    columnas_validas = True  # Termina el ciclo si el input es correcto
                 except (ValueError, IndexError):
                     print("Error: Ingrese números válidos correspondientes a las columnas.")
 
+            # Definir tipos de columnas
             columnas_tipo = {}  # Diccionario para almacenar los tipos de columnas
             for columna in columnas_a_mezclar:
                 tipo = solicitar_opcion(f"\n¿Qué tipo de datos es la columna '{columna}'? (name, surname, email, otro): ", ['name', 'surname', 'email', 'otro'])
                 columnas_tipo[columna] = tipo
 
+            # Aplicar mezcla
             df_mezclado = aplicar_mezcla_en_partes(df, columnas_tipo)
 
-            while True:
+            # Solicitar clave primaria
+            clave_primaria = None
+            clave_valida = False
+            while not clave_valida:
                 clave_primaria = input("Por favor, introduce el nombre de la columna que es la clave primaria: ").strip()
                 if clave_primaria in df.columns:
-                    break  # Si la clave primaria es válida, salimos del bucle
+                    clave_valida = True  # Termina el ciclo si la clave primaria es válida
                 else:
                     print("Error: La clave primaria ingresada no existe en las columnas de la tabla. Intente nuevamente.")
+
             # Guardar en la BD la tabla mezclada
             guardar_en_bd(df_mezclado, cnx, tabla_seleccionada, columnas_a_mezclar, clave_primaria)
 
         elif opcion == "2":
             print("Saliendo del programa.")
             cnx.close()
-            break
 
-def solicitar_numero_o_texto(mensaje, opciones_validas=None):
-    while True:
-        entrada = input(mensaje).strip()
-        if opciones_validas and entrada.lower() in opciones_validas:
-            return entrada.lower()
-        elif opciones_validas:
-            log.debug(f"Opción no válida. Opciones válidas: {', '.join(opciones_validas)}")
-        else:
-            return entrada
 
 # Función modificada para leer la tabla con paginación
+# Función modificada para leer la tabla con paginación usando `while` con condición de parada
 def leer_tabla(cnx, tabla_seleccionada, batch_size=100):
     try:
         # Crear un DataFrame vacío para almacenar los resultados
         df_total = pd.DataFrame()
         offset = 0
+        df_batch = pd.DataFrame([1])  # Inicialización temporal para entrar al bucle
 
-        while True:
+        while not df_batch.empty:
             query = f"SELECT * FROM {tabla_seleccionada} LIMIT {batch_size} OFFSET {offset}"
             df_batch = pd.read_sql(query, cnx)
 
-            if df_batch.empty:
-                break  # Salir del bucle si no hay más datos
-
-            df_total = pd.concat([df_total, df_batch], ignore_index=True)
-            offset += batch_size  # Aumentar el offset para la próxima iteración
+            # Si hay datos, se concatenan al DataFrame total
+            if not df_batch.empty:
+                df_total = pd.concat([df_total, df_batch], ignore_index=True)
+                offset += batch_size  # Aumentar el offset para la próxima iteración
 
         log.debug(f"Datos leídos desde la tabla {tabla_seleccionada}")
         return df_total
     except Exception as e:
         log.debug(f"Error al leer la tabla {tabla_seleccionada}: {str(e)}")
         return pd.DataFrame()  # Devolver DataFrame vacío en caso de error
+
 
 def aplicar_mezcla_en_partes(df, columnas_tipo, batch_size=100):
     # Inicializa las listas para las columnas a mezclar
@@ -473,9 +479,6 @@ def guardar_en_bd(df, cnx, tabla, columnas_a_mezclar, clave_primaria, batch_size
 
 
     print("Datos actualizados en la base de datos.")
-
-
-
 
 
 
