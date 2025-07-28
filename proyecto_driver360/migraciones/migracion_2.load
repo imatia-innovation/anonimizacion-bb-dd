@@ -1,0 +1,34 @@
+LOAD DATABASE
+	FROM mysql://root:1234@host.docker.internal:3307/demo_driver360_docker
+	INTO postgresql://postgres:1234@host.docker.internal:5433/demo_driver360
+
+WITH include drop, create tables, create indexes, reset sequences, foreign keys
+
+SET work_mem to '128MB',
+	maintenance_work_mem to '128MB'
+
+CAST
+	type datetime to timestamptz,
+    type date to date,
+    type "tinyint(1)" to boolean drop typemod,
+    type "boolean(1)" to boolean drop typemod,
+    type boolean to boolean drop typemod
+
+INCLUDING ONLY TABLE NAMES MATCHING 
+	~/^cor_materials_sections$/,
+	~/^revinfo$/,
+	~/^cor_invoice_lines$/,
+	~/^cor_third_financial$/,
+	~/^cor_operations$/,
+	~/^cor_locations_materials_sections$/,
+	~/^cor_labours_aud$/,
+	~/^imp_vehicles$/,
+	~/^cor_mst_material_sale_rates_materials_aud$/,
+	~/^cor_addresses$/,
+	~/^cor_failed_odoo_invoices$/,
+	~/^cor_contacts_aud$/,
+	~/^cor_operation_splits$/,
+	~/^cor_contacts$/,
+	~/^cor_vehicles_aud$/
+
+set work_mem to '2048 MB', maintenance_work_mem to '4096 MB';

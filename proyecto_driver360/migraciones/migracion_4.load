@@ -1,0 +1,73 @@
+LOAD DATABASE
+	FROM mysql://root:1234@host.docker.internal:3307/demo_driver360_docker
+	INTO postgresql://postgres:1234@host.docker.internal:5433/demo_driver360
+
+WITH include drop, create tables, create indexes, reset sequences, foreign keys
+
+SET work_mem to '128MB',
+	maintenance_work_mem to '128MB'
+
+CAST
+	type datetime to timestamptz,
+    type date to date,
+    type "tinyint(1)" to boolean drop typemod,
+    type "boolean(1)" to boolean drop typemod,
+    type boolean to boolean drop typemod
+
+INCLUDING ONLY TABLE NAMES MATCHING 
+	~/^cor_delivery_notes$/,
+	~/^cor_materials_rates$/,
+	~/^cor_material_orders_details$/,
+	~/^cor_material_sections_materials$/,
+	~/^cor_material_orders$/,
+	~/^cor_reparation_orders$/,
+	~/^cor_vehicle_versions_aud$/,
+	~/^superset_or_reparation_orders$/,
+	~/^cor_free_invoices$/,
+	~/^cor_troubles_aud$/,
+	~/^hyundai_rates$/,
+	~/^superset_tenant_costes$/,
+	~/^cor_equipments_aud$/,
+	~/^superset_importadora_costes$/,
+	~/^cor_troubles$/,
+	~/^cor_thirds_companies$/,
+	~/^cor_sections_aud$/,
+	~/^cor_third_financial_aud$/,
+	~/^cor_vehicles$/,
+	~/^cor_delivery_notes_aud$/,
+	~/^cor_material_orders_details_aud$/,
+	~/^idemp_reg_list$/,
+	~/^cor_companies_aud$/,
+	~/^cor_centers_aud$/,
+	~/^cor_material_sections_materials_aud$/,
+	~/^superset_citas$/,
+	~/^cor_locations_materials_sections_aud$/,
+	~/^cor_estimates_configurations$/,
+	~/^cor_materials_material_tags_aud$/,
+	~/^mig_tarifa$/,
+	~/^cor_free_invoice_lines$/,
+	~/^cor_mst_suppliers$/,
+	~/^cor_vehicle_models$/,
+	~/^cor_material_families$/,
+	~/^cor_equipments_thirds$/,
+	~/^cor_materials_material_tags$/,
+	~/^cor_receipts_aud$/,
+	~/^cor_estimates_configurations_aud$/,
+	~/^cor_mst_polivalences_aud$/,
+	~/^cor_operations_polivalences$/,
+	~/^cor_vehicle_options$/,
+	~/^cor_material_orders_aud$/,
+	~/^ext_agar_thirds$/,
+	~/^temp_performance_20230425$/,
+	~/^cor_tra_actions$/,
+	~/^cor_users_aud$/,
+	~/^cor_mst_vehicle_versions$/,
+	~/^cor_vehicle_models_aud$/,
+	~/^cor_chassis$/,
+	~/^cor_severals$/,
+	~/^cor_addresses_aud$/,
+	~/^cor_severals_aud$/,
+	~/^cor_ext_labour_times$/,
+	~/^cor_vehicle_plates$/
+
+set work_mem to '2048 MB', maintenance_work_mem to '4096 MB';

@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  python-scripts:
+    build: .
+    depends_on:
+      - dummy_postgres  #relleno del depends on
+    environment:
+      DB_HOST: host.docker.internal #alias que permite a un contenedor conectarse al host
+      DB_PORT: 5433
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      DB_NAME: demo_driver360
+    volumes: #para que el contenedor pueda acceder al codigo y datos
+      - ./scripts:/app/scripts
+      - ./tablas.csv:/app/tablas.csv
+    working_dir: /app
+    command: ["python", "scripts/anonimizacion_postgres.py"] #ejecución inmediata del script de anonimizacion
+
+  dummy_postgres:
+    image: busybox  #contenedor auxiliar para no romper depends_on, que se quede esperando a que el proceso acabe
+    command: tail -f /dev/null
