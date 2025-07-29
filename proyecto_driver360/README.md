@@ -4,3 +4,7 @@ docker run --rm --memory="8g" --memory-swap="8g" --name pgloader -v "ruta_a_este
 Los migraciones.load están configurados para migrar la BBDD desde un contenedor mysql a un contenedor postgresql
 
 El dockerfile usado sirve para ejecutar la anonimización en el contenedor de POSTGRESQL una vez migrada la BBDD
+
+Nombre BBDD: demo_driver360
+Usuario: postgres
+Password: 1234
